@@ -1,0 +1,128 @@
+import os
+
+def get_input():
+    print("--- Disk Scheduling Input ---")
+    n = int(input("Enter number of disk requests: "))
+    requests = []
+    print(f"Enter the {n} requests (separated by space):")
+    requests = list(map(int, input().split()))
+    head = int(input("Enter initial head position: "))
+    disk_size = int(input("Enter total disk size (e.g., 200): "))
+    return requests, head, disk_size
+
+def fcfs(requests, head):
+    print("\n--- FCFS Disk Scheduling ---")
+    seek_time = 0
+    current_head = head
+    sequence = []
+    
+    for req in requests:
+        distance = abs(current_head - req)
+        seek_time += distance
+        sequence.append(req)
+        current_head = req
+        
+    print(f"Movement Sequence: {sequence}")
+    print(f"Total Seek Time: {seek_time}")
+    return seek_time
+
+def sstf(requests, head):
+    print("\n--- SSTF Disk Scheduling ---")
+    seek_time = 0
+    current_head = head
+    temp_requests = requests.copy()
+    sequence = []
+    
+    while temp_requests:
+        nearest = min(temp_requests, key=lambda x: abs(x - current_head))
+        distance = abs(current_head - nearest)
+        seek_time += distance
+        sequence.append(nearest)
+        current_head = nearest
+        temp_requests.remove(nearest)
+        
+    print(f"Movement Sequence: {sequence}")
+    print(f"Total Seek Time: {seek_time}")
+    return seek_time
+
+def scan(requests, head, disk_size, direction="high"):
+    print("\n--- SCAN Disk Scheduling ---")
+    seek_time = 0
+    current_head = head
+    left = [r for r in requests if r < head]
+    right = [r for r in requests if r >= head]
+    left.sort(reverse=True)
+    right.sort()
+    
+    sequence = []
+    if direction == "high":
+        for r in right:
+            seek_time += abs(current_head - r)
+            current_head = r
+            sequence.append(r)
+        # Move to the end of the disk
+        seek_time += abs(current_head - (disk_size - 1))
+        current_head = disk_size - 1
+        for r in left:
+            seek_time += abs(current_head - r)
+            current_head = r
+            sequence.append(r)
+            
+    print(f"Movement Sequence: {sequence}")
+    print(f"Total Seek Time: {seek_time}")
+    return seek_time
+
+def cscan(requests, head, disk_size):
+    print("\n--- C-SCAN Disk Scheduling ---")
+    seek_time = 0
+    current_head = head
+    left = [r for r in requests if r < head]
+    right = [r for r in requests if r >= head]
+    left.sort()
+    right.sort()
+    
+    sequence = []
+    # Service requests on the right
+    for r in right:
+        seek_time += abs(current_head - r)
+        current_head = r
+        sequence.append(r)
+    
+    # Jump to the end, then jump to the start (0)
+    seek_time += abs(current_head - (disk_size - 1))
+    seek_time += (disk_size - 1) # Jump from end back to 0
+    current_head = 0
+    
+    # Service requests on the left
+    for r in left:
+        seek_time += abs(current_head - r)
+        current_head = r
+        sequence.append(r)
+        
+    print(f"Movement Sequence: {sequence}")
+    print(f"Total Seek Time: {seek_time}")
+    return seek_time
+
+def compare_performance(results):
+    print("\n--- Performance Comparison ---")
+    print(f"{'Algorithm':<10} | {'Total Seek Time':<15}")
+    print("-" * 30)
+    for algo, time in results.items():
+        print(f"{algo:<10} | {time:<15}")
+    
+    best_algo = min(results, key=results.get)
+    print(f"\nBest Performing Algorithm: {best_algo}")
+
+def main():
+    reqs, head, size = get_input()
+    
+    results = {}
+    results['FCFS'] = fcfs(reqs, head)
+    results['SSTF'] = sstf(reqs, head)
+    results['SCAN'] = scan(reqs, head, size)
+    results['C-SCAN'] = cscan(reqs, head, size)
+    
+    compare_performance(results)
+
+if __name__ == "__main__":
+    main()
